@@ -13,14 +13,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// -------------------
-// DB Connection
-// -------------------
+
 mongoose.connect(process.env.MONGO_URI);
 
-// -------------------
-// Schema
-// -------------------
 const ShareSchema = new mongoose.Schema({
   id: String,
   type: String, // "text" or "file"
@@ -31,9 +26,7 @@ const ShareSchema = new mongoose.Schema({
 });
 const Share = mongoose.model("Share", ShareSchema);
 
-// -------------------
-// Rate Limiting
-// -------------------
+
 const limiter = rateLimit({
   windowMs: 1 * 60 * 1000, // 1 minute
   max: 20, // 20 requests/min
@@ -41,9 +34,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// -------------------
-// File Upload Setup
-// -------------------
+
 const storage = multer.diskStorage({
   destination: "uploads/",
   filename: (req, file, cb) => {
@@ -56,9 +47,6 @@ const upload = multer({
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
 });
 
-// -------------------
-// Routes
-// -------------------
 
 // Upload text
 app.post("/upload/text", async (req, res) => {
@@ -108,14 +96,10 @@ app.get("/get/:id", async (req, res) => {
   }
 });
 
-// -------------------
-// Serve Uploaded Files
-// -------------------
+
 app.use("/uploads", express.static("uploads"));
 
-// -------------------
-// Cron cleanup
-// -------------------
+
 cron.schedule("*/10 * * * *", async () => {
   const now = new Date();
   const expired = await Share.find({ expiresAt: { $lt: now } });
@@ -132,9 +116,7 @@ cron.schedule("*/10 * * * *", async () => {
   console.log("🧹 Cleaned expired shares");
 });
 
-// -------------------
-// Start Server
-// -------------------
+
 app.listen(5000, () =>
   console.log("🚀 Backend running on http://localhost:5000")
 );
